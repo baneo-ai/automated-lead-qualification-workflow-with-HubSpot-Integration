@@ -1,0 +1,438 @@
+{
+  "name": "Call event reporting and Call Summarization",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "REDACTED",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        -128
+      ],
+      "id": "REDACTED",
+      "name": "Webhook",
+      "webhookId": "REDACTED"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED",
+              "leftValue": "={{ ($json.endedReason || $json.body?.message?.endedReason || '').toLowerCase().trim() }}",
+              "rightValue": "assistant-",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "REDACTED",
+              "leftValue": "={{ ($json.endedReason || $json.body?.message?.endedReason || '').toLowerCase().trim() }}",
+              "rightValue": "customer ended call",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        -128
+      ],
+      "id": "REDACTED",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize Vapi fields so downstream nodes can read them reliably\nreturn items.map(item => {\n  const src = item.json || {};\n  const msg = src.body?.message || src.message || {};\n\n  const ended = (msg.endedReason ?? src.endedReason ?? '')\n    .toString()\n    .toLowerCase()\n    .trim();\n\n  const summary = (msg.summary ?? src.summary ?? '').toString().trim();\n\n  item.json.endedReason = ended;        // e.g., \"assistant-ended\", \"assistant-transferred\"\n  item.json.summary     = summary;      // native call summary, if provided\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -128
+      ],
+      "id": "REDACTED",
+      "name": "Normalize EndedReason"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "search",
+        "additionalFields": {
+          "properties": [
+            "phone"
+          ],
+          "query": "={{ $('Normalize EndedReason').item.json.body.message.call.customer.number }}"
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        -128
+      ],
+      "id": "REDACTED",
+      "name": "Search contacts",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "engagement",
+        "type": "call",
+        "metadata": {
+          "body": "={{ $('Normalize EndedReason').item.json.body.message.analysis.summary }}"
+        },
+        "additionalFields": {
+          "associations": {
+            "contactIds": "={{ $json.properties.hs_object_id }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        928,
+        -128
+      ],
+      "id": "REDACTED",
+      "name": "Create an engagement",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "contactId": {
+          "__rl": true,
+          "value": "={{ $json.associations.contactIds[0] }}",
+          "mode": "id"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        1424,
+        -288
+      ],
+      "id": "REDACTED",
+      "name": "Get a contact",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.properties.email.value }}",
+        "additionalFields": {
+          "leadStatus": "OPEN_DEAL"
+        },
+        "options": {
+          "resolveData": true
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        1648,
+        -288
+      ],
+      "id": "REDACTED",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED",
+              "leftValue": "={{ $json.engagement.bodyPreview }}",
+              "rightValue": "recommended speaking with a specialist",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "REDACTED",
+              "leftValue": "={{ $json.engagement.bodyPreview }}",
+              "rightValue": "forwarding the call",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        -128
+      ],
+      "id": "REDACTED",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "contactId": {
+          "__rl": true,
+          "value": "={{ $json.associations.contactIds[0] }}",
+          "mode": "id"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        48
+      ],
+      "id": "REDACTED",
+      "name": "Get a contact1",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.properties.email.value }}",
+        "additionalFields": {
+          "leadStatus": "UNQUALIFIED"
+        },
+        "options": {
+          "resolveData": true
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        1664,
+        48
+      ],
+      "id": "REDACTED",
+      "name": "Create or update a contact1",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED",
+              "leftValue": "={{ $('If1').item.json.body.message.type }}",
+              "rightValue": "end-of-call-report",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        -128
+      ],
+      "id": "REDACTED",
+      "name": "If2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize EndedReason",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Search contacts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize EndedReason": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search contacts": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an engagement": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a contact": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get a contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a contact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a contact1": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Create an engagement",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "REDACTED",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "id": "REDACTED",
+  "tags": []
+}

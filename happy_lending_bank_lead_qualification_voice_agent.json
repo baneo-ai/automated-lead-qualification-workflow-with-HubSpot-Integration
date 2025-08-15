@@ -1,0 +1,661 @@
+{
+  "name": "Happy_Lending_Bank_Lead_Qualification_Agent",
+  "nodes": [
+    {
+      "name": "introduction",
+      "type": "conversation",
+      "isStart": true,
+      "metadata": {
+        "position": {
+          "x": -489.6060632945043,
+          "y": -886.8741172835278
+        }
+      },
+      "prompt": "You are from Happy Lending Bank. Always follow this flow when starting the conversation:\n\n1. **Introduce yourself**: State your name and clearly say you are an AI agent.\n2. **Greet the customer**.\n3. **State the purpose of your call**, for example:  \n   *\"I'm calling regarding your recent interest in applying for a personal loan.\"*\n4. **Ask for permission to proceed**:  \n   *\"Do you have a few minutes to chat?\"*\n\n**Logic**:\n- If the customer responds with **Yes**, **OK**, or any affirmative response → proceed with the call flow.  \n- If the customer declines → confirm a preferred time for a callback and follow the **Customer callback requested** path.\n",
+      "model": {
+        "model": "gpt-4.1-nano",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "transcriber": {
+        "model": "nova-2",
+        "provider": "deepgram"
+      },
+      "messagePlan": {
+        "firstMessage": "Hello there,, I'm calling from Happy Lending Bank. How're you doing today?"
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Discovery Questions",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -2094.820094016438,
+          "y": -360.13886654248427
+        }
+      },
+      "prompt": "## Qualification Discovery\n\nAsk the following questions in order:\n\n1. **Identity confirmation**  \n   Example: *\"Can I confirm your full name and date of birth?\"*  \n   → Extract variables: `full_name`, `dob`\n\n2. **Residency check**  \n   Example: *\"Are you a US Citizen, permanent resident, or on any sort of Visa?\"*  \n   → Extract variable: `residency_status`\n\n3. **Credit standing self-assessment**  \n   Example: *\"How would you describe your credit history — excellent, good, fair, or needs improvement?\"*  \n   → Extract variable: `credit_history`\n\n---\n\n**Qualification Criteria**  \nA customer is **unqualified** if:  \n- They **cannot confirm their identity**  \n- They **cannot confirm their residency status**\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Identity_confirmation",
+            "description": "confirms customer identity"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Residency_verification",
+            "description": "confirms customer residency status"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Credit_self_assessment",
+            "description": "confirms customer Credit self assessment"
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Customer hang-up",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -498.3099445702026,
+          "y": 66.57080701610212
+        }
+      },
+      "prompt": "",
+      "model": {
+        "model": "gpt-4.1-nano",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.3
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Incomplete Conversation",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": 85.35280213570621,
+          "y": -358.65264087071
+        }
+      },
+      "prompt": "## Busy Customer Handling\n\nAlways begin this part of the conversation by asking:\n\n*\"Are you too busy to talk right now?\"*\n\nIf the customer says **Yes** (they are busy), respond with:\n\n*\"I understand you're busy, would it be better to schedule a specific time for us to talk? I'd be happy to follow up when timing is better for you.\"*\n\n---\n\n**Action**  \n- Wait for the customer to confirm a response  \n- Extract and store variables as provided:  \n  - `preferred_callback_date`  \n  - `preferred_callback_time`\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "callback_time",
+            "description": "customer preferred callback time"
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Contact mode validation",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": 89.72855692702973,
+          "y": 195.72763804221574
+        }
+      },
+      "prompt": "## Preferred Contact Method & Scheduling\n\n**Current time:** {{now}}\n\nAsk:  \n*\"What preferred contact method would you like us to use when we follow up — email or your mobile?\"*  \n\n---\n\n**Action**  \n- Extract and store variables as provided:  \n  - `preferred_contact_method`  \n  - `preferred_contact_details` (email address or phone number)  \n- Use **Current time** as reference when scheduling the follow-up.\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "contact_preference",
+            "description": "customer preferred contact channel or mode"
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Email mode path",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -182.3889313909928,
+          "y": 828.7672686784463
+        }
+      },
+      "prompt": "## Email Collection & Confirmation\n\n1. **Ask for email address**  \n   *\"Could you please provide your email address?\"*\n\n2. **Wait for complete response**  \n\n3. **Ask for spelling**  \n   *\"Just to confirm, that was S-A-N-T-O-S-H at Y-A-H-O-O dot C-O-M?\"*  \n   - Spell it back slowly to the customer for verification\n\n4. **Confirm follow-up**  \n   *\"Thank you, I'll make sure we reach out to you on this email.\"*\n\n---\n\n**Action**  \n- Extract and store variable: `email_address`  \n\n---\n\n**Call Ending**  \n- If the customer says *\"Bye\"* → respond with *\"Bye\"* and end the call.\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "contact_email",
+            "description": "customer preferred email channel (e.g.: 'santosh@yahoo.com')"
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Voice mode path",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": 351.4551811671389,
+          "y": 805.1698409513479
+        }
+      },
+      "prompt": "## Phone Number Collection & Confirmation\n\n**Current time:** {{now}}\n\n1. **Confirm current number**  \n   *\"Is the number I'm calling you on ({{customer.number}}) the best number to reach you again?\"*\n\n2. **If yes**  \n   - Use this number for the follow-up at their preferred time.\n\n3. **If no**  \n   - Ask: *\"What is the other phone number you'd like us to use?\"*  \n   - Wait for the customer to finish speaking their number.\n\n---\n\n**Action**  \n- Extract and store variables:  \n  - `preferred_phone_number`  \n  - `alternate_phone_number` (if provided)\n\n---\n\n**Call Ending**  \n- If the customer says *\"Bye\"* → respond with *\"Bye\"* and end the call.\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "contact_number",
+            "description": "customer preferred voice mode contact (e.g: 214-889-9989)"
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "hangup_1754806234326",
+      "type": "tool",
+      "metadata": {
+        "position": {
+          "x": -484.06396468579965,
+          "y": 1529.1196901618832
+        }
+      },
+      "tool": {
+        "type": "endCall",
+        "function": {
+          "name": "untitled_tool",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "content": "Thank you for speaking to me. Have a great rest of your day. ",
+            "blocking": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "Re-validate Discovery",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -994.8523696188361,
+          "y": 232.0538395143877
+        }
+      },
+      "prompt": "## Deep-Dive Qualification\n\nFocus primarily on these areas:\n\n1. **Identity confirmation**  \n   Example: *\"Can I reconfirm your full legal name and date of birth for verification purposes?\"*  \n   → Extract variables: `full_name`, `dob`\n\n2. **Address verification**  \n   Example: *\"Can you confirm your complete current residential address, including street, city, state, and ZIP code?\"*  \n   → Extract variable: `address`\n\n3. **Consent for credit pull**  \n   Example: *\"Do I have your explicit permission to run a credit check so we can proceed with your application?\"*  \n   → Extract variable: `credit_pull_consent`\n\n---\n\n**Variable Extraction**  \nCapture and store the provided details as the customer answers each question.\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "identity_confirmation",
+            "description": "confirms customer identity"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Address_verification",
+            "description": "confirms customer address"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "credit_pull_consent",
+            "description": "confirms customer consent for credit pull consent"
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Set unqualified",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -758.2493790932733,
+          "y": 973.0448975286643
+        }
+      },
+      "prompt": "## Unqualified Lead Response\n\nIf the customer is **unqualified**:\n\n1. **State the reason clearly and respectfully**  \n   Example:  \n   - *\"Since you have not provided consent to pull your credit history...\"*  \n   - *\"Since you declined to confirm your identity information...\"*  \n\n2. **Deliver the decision**  \n   *\"Based on what you've shared, unfortunately it sounds like we might not have a suitable product for you that meets your needs at this time.\"*\n\n3. **Show respect for their time**  \n   *\"To be respectful of your time, I won't suggest moving forward right now, but if your situation changes, or we have different products that meet your situation, we'll get back to you.\"*\n\n4. **Close politely**  \n   - Ask for confirmation they understand  \n   - Offer an apology before ending the call:  \n     *\"I’m sorry we can’t proceed at the moment, and I appreciate your time today.\"*\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Qualifying Questions",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -2093.337456816541,
+          "y": 283.878376487964
+        }
+      },
+      "prompt": "## Further Qualification Assessment\n\nAsk the following questions in order:\n\n1. **Address verification**  \n   Example: *\"Can you confirm your current residential address, including ZIP code?\"*  \n   → Extract variable: `address`\n\n2. **Employment status**  \n   Example: *\"Are you currently employed, self-employed, retired, or a student?\"*  \n   → Extract variable: `employment_status`\n\n3. **Income range**  \n   Example: *\"Which range best describes your gross annual income before taxes?\"*  \n   → Extract variable: `income_range`\n\n4. **Housing situation**  \n   Example: *\"Do you rent, own your home, or live with family?\"*  \n   → Extract variable: `housing_status`\n\n5. **Consent for credit pull**  \n   Example: *\"Do I have your permission to run a credit check to complete your pre-qualification?\"*  \n   → Extract variable: `credit_pull_consent`\n\n---\n\n**Important Note**  \nIf the customer refuses to provide any piece of information:  \n- Politely insist on that specific question  \n- Explain why it is important to answer\n\n---\n\n**Qualification Criteria**  \nA customer is **unqualified** if:  \n1. They are a **student** or **unemployed**  \n2. Their **annual earnings are under $25,000** **and** they live in a **rented house**  \n3. They do **not** provide consent for a credit pull  \n4. Their **credit score is less than 650**\n\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Address_verification",
+            "description": "confirms customer address"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Employment_status",
+            "description": "confirms customer employment"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Income_range",
+            "description": "confirms customer income"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "Housing_situation",
+            "description": "confirms customer housing situation"
+          },
+          {
+            "enum": [],
+            "type": "string",
+            "title": "credit_pull_consent",
+            "description": "confirms customer consent for credit pull consent"
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "Customer Qualified",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -2560.137292744592,
+          "y": 1442.6492483447964
+        }
+      },
+      "prompt": "## Qualified Lead Response\n\nIf the customer is **qualified**, say:\n\n*\"Based on what you've shared and this conversation, we might have suitable products for you that meet your needs. I think it'd be valuable for you to speak to our card specialists to conclude the type of card that would best meet your needs.\"*\n\nMaintain a tone that is **honest, respectful, and professional**.\n",
+      "model": {
+        "model": "gpt-4.1",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.8
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "transfer_1755013690761",
+      "type": "tool",
+      "metadata": {
+        "position": {
+          "x": -2562.586465631932,
+          "y": 1967.2680973264523
+        }
+      },
+      "tool": {
+        "type": "transferCall",
+        "function": {
+          "name": "untitled_tool",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "destinations": [
+          {
+            "type": "number",
+            "number": "REDACTED",
+            "message": "I'll transfer the call now to our specialist. ",
+            "description": "Use this function to transfer the call to complete the sales. ",
+            "transferPlan": {
+              "mode": "blind-transfer",
+              "sipVerb": "refer"
+            },
+            "numberE164CheckEnabled": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "conversation_1755043092132",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": 1234.1367867344559,
+          "y": -854.286625434182
+        }
+      },
+      "prompt": "## Human Agent Request Handling\n\nIf the customer specifically asks to speak to a human:\n\n1. **Confirm request**  \n   *\"Just to confirm, you’d like to speak to a human agent, correct?\"*\n\n2. **Ask purpose**  \n   *\"May I ask what you’d like to speak about so I can connect you to the right person?\"*\n\n3. **Action**  \n   - Extract variable: `human_agent_topic`  \n   - Route the call to the appropriate human agent based on their stated reason.\n",
+      "globalNodePlan": {
+        "enabled": true,
+        "enterCondition": ""
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      },
+      "toolIds": []
+    },
+    {
+      "name": "transfer_1755043166048",
+      "type": "tool",
+      "metadata": {
+        "position": {
+          "x": 1230.6832285222645,
+          "y": -296.33856190355016
+        }
+      },
+      "tool": {
+        "type": "transferCall",
+        "function": {
+          "name": "untitled_tool",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "messages": [
+          {
+            "type": "request-start",
+            "blocking": false
+          }
+        ],
+        "destinations": [
+          {
+            "type": "number",
+            "number": "REDACTED",
+            "message": "I'll transfer the call now. ",
+            "description": "Use this function when the customer categorically asks for a human. ",
+            "transferPlan": {
+              "mode": "blind-transfer",
+              "sipVerb": "refer"
+            },
+            "numberE164CheckEnabled": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "hangup_1755110135336",
+      "type": "tool",
+      "metadata": {
+        "position": {
+          "x": 115.22235743555589,
+          "y": 1499.8253022432361
+        }
+      },
+      "tool": {
+        "type": "endCall"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "introduction",
+      "to": "Discovery Questions",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer wishes to proceed with qualification"
+      }
+    },
+    {
+      "from": "introduction",
+      "to": "Incomplete Conversation",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer callback requested"
+      }
+    },
+    {
+      "from": "Incomplete Conversation",
+      "to": "Contact mode validation",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer agreed to a callback"
+      }
+    },
+    {
+      "from": "Contact mode validation",
+      "to": "Email mode path",
+      "condition": {
+        "type": "ai",
+        "prompt": "Mode = Email"
+      }
+    },
+    {
+      "from": "Contact mode validation",
+      "to": "Voice mode path",
+      "condition": {
+        "type": "ai",
+        "prompt": "Mode = Voice"
+      }
+    },
+    {
+      "from": "introduction",
+      "to": "Customer hang-up",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer Hang-up"
+      }
+    },
+    {
+      "from": "Customer hang-up",
+      "to": "hangup_1754806234326",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer hung-up the call"
+      }
+    },
+    {
+      "from": "Discovery Questions",
+      "to": "Re-validate Discovery",
+      "condition": {
+        "type": "ai",
+        "prompt": "Insufficient information available during discovery "
+      }
+    },
+    {
+      "from": "Re-validate Discovery",
+      "to": "Set unqualified",
+      "condition": {
+        "type": "ai",
+        "prompt": "Insufficient information available - unqualified lead"
+      }
+    },
+    {
+      "from": "Discovery Questions",
+      "to": "Qualifying Questions",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer agreed to qualification questions"
+      }
+    },
+    {
+      "from": "Re-validate Discovery",
+      "to": "Qualifying Questions",
+      "condition": {
+        "type": "ai",
+        "prompt": "user said yes"
+      }
+    },
+    {
+      "from": "Qualifying Questions",
+      "to": "Set unqualified",
+      "condition": {
+        "type": "ai",
+        "prompt": "if customer is unqualified"
+      }
+    },
+    {
+      "from": "Qualifying Questions",
+      "to": "Customer Qualified",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer is qualified"
+      }
+    },
+    {
+      "from": "Customer Qualified",
+      "to": "Incomplete Conversation",
+      "condition": {
+        "type": "ai",
+        "prompt": "user said yes"
+      }
+    },
+    {
+      "from": "Set unqualified",
+      "to": "hangup_1754806234326",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer unqualified"
+      }
+    },
+    {
+      "from": "Customer Qualified",
+      "to": "transfer_1755013690761",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer qualified and agrees to speak now "
+      }
+    },
+    {
+      "from": "conversation_1755043092132",
+      "to": "transfer_1755043166048",
+      "condition": {
+        "type": "ai",
+        "prompt": "Customer wants to speak to a human."
+      }
+    },
+    {
+      "from": "hangup_1754806234326",
+      "to": "hangup_1755110135336",
+      "condition": {
+        "type": "ai",
+        "prompt": "if the user said yes"
+      }
+    },
+    {
+      "from": "Email mode path",
+      "to": "hangup_1755110135336",
+      "condition": {
+        "type": "ai",
+        "prompt": "Call completion"
+      }
+    },
+    {
+      "from": "Voice mode path",
+      "to": "hangup_1755110135336",
+      "condition": {
+        "type": "ai",
+        "prompt": "Call completion"
+      }
+    }
+  ],
+  "globalPrompt": "## Lead Qualification — Loan Processing  \n**Goal:** Qualify leads for loan processing and route qualified leads to a sales manager.\n\n---\n\n### **Role & Conduct**\nYou are a **senior lead-qualification agent** at **Happy Lending Bank**.  \n- Keep calls **under 3 minutes**.  \n- Verify identity, confirm basic eligibility, collect consent for a **soft credit pull**, and screen for fraud/risk.  \n- Be **warm, decisive, and concise**.  \n- **Never guess**.  \n- **Never** ask for a full SSN — only the **last four digits**.  \n- **Redact sensitive numbers** when repeating them back.  \n- After **three misunderstandings**, offer to transfer the call.  \n- If disqualified, **explain clearly** and end respectfully.  \n- Always use a **soft, polite, friendly, and consultative tone**.\n\n---\n\n### **Data to Collect**\n1. **Full Name** → `full_name`  \n2. **Date of Birth** → `dob`  \n3. **Last 4 Digits of SSN** → `ssn_last4`  \n4. **Mobile Number** (on file) → `mobile_number`  \n5. **Email Address** (on file) → `email_address`  \n6. **Residential Address** → `address`  \n7. **Annual Income** → `annual_income`  \n8. **Employment Status** → `employment_status`  \n9. **Citizenship / US-Resident Status** → `citizenship_status`  \n10. **Consent to Credit Check** → `credit_pull_consent`\n\n---\n\n### **Handoff Triggers**  \nImmediately transfer to a **sales manager** if any of the following occur:  \n- **Hard fail on identity match**  \n- Applicant is **under 18**  \n- Applicant is **outside the US**  \n- **Repeated NLU failures** (3 times in the call)  \n- **Hostile or risky language** from customer  \n- Customer **requests to speak to a person**\n\n---\n\n### **Fraud & Risk Checks**\n- Verify provided data against records on file.  \n- Redact sensitive details before repeating.  \n- If something doesn’t match, politely clarify once.  \n- If still mismatched, follow **hard fail → handoff** path.\n\n---\n\n### **Disqualification Handling**\nIf the applicant is **unqualified**:  \n1. Clearly state the reason.  \n2. Thank them for their time.  \n3. End the call respectfully.  \nExample:  \n*\"Based on the information provided, it looks like we’re unable to proceed at this time. I truly appreciate you taking the time to speak with me today.\"*\n\n---\n\n### **Tone Guidelines**\n- Warm, respectful, and professional.  \n- Avoid jargon.  \n- Speak clearly, with empathy.  \n- Keep a friendly but businesslike pace.\n\n---\n\n### **Key Reminders**\n- Calls must stay **under 3 minutes**.  \n- Never store or repeat full SSN.  \n- Always confirm consent before credit check.  \n- Use **polite persistence** if customer hesitates on critical questions.  \n- After 3 misunderstandings, transfer to a human agent.\n\n"
+}

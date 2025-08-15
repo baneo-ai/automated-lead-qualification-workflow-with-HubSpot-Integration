@@ -1,0 +1,268 @@
+{
+  "name": "Happy Lending Lead Qualification with HubSpot Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "",
+              "leftValue": "={{ $json.properties.hs_lead_status.value }}",
+              "rightValue": "NEW",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        -368
+      ],
+      "id": "",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"workflowId\": REDACTED \"\",\n  \"workflowOverrides\": {},\n  \"customer\": {\n    \"number\": \"{{ $json.properties.phone.value }}\",\n    \"name\": \"{{ $json.properties.firstname.value }}\"\n  },\n  \"phoneNumberId\":REDACTED \"\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        -368
+      ],
+      "id": "50c00c80-7a9e-49e6-bd76-5801fb6c71d2",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.properties.email.value }}",
+        "additionalFields": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        -272
+      ],
+      "id": "7243fb34-11ab-4b74-9b3f-cb70f7128b75",
+      "name": "Create or update a contact1",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "contactId": {
+          "__rl": true,
+          "value": "={{ $json.contactId }}",
+          "mode": "id"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -368
+      ],
+      "id": "REDACTED",
+      "name": "Get a contact",
+      "retryOnFail": true,
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "eventsUi": {
+          "eventValues": [
+            {}
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hubspotTrigger",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -368
+      ],
+      "id": "f61e654b-ae5b-461e-a23f-5957820bb08f",
+      "name": "HubSpot Trigger",
+      "webhookId": "REDACTED",
+      "credentials": {
+        "hubspotDeveloperApi": {
+          "id": "REDACTED",
+          "name": "HubSpot Developer account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $('If').item.json.properties.email.value }}",
+        "additionalFields": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        -464
+      ],
+      "id": "600684b8-d40e-4067-b63a-b671880dd385",
+      "name": "Search record by email",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.properties.email.value }}",
+        "additionalFields": {
+          "leadStatus": "IN_PROGRESS"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        -464
+      ],
+      "id": "c0d378ce-46b6-4fe2-9a5a-e3cb9cab0cf8",
+      "name": "Update record status",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "REDACTED",
+          "name": "HubSpot account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Search record by email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create or update a contact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a contact": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search record by email": {
+      "main": [
+        [
+          {
+            "node": "Update record status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update record status": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "REDACTED",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "id": "7YyAlqsMcivWBhOY",
+  "tags": []
+}
