@@ -20,7 +20,7 @@ THere's a Python+FastAPI+LangGraph version also available.
 
 ## Automated Lead Qualification Workflow (LangGraph Version)
 
-This folder contains the *LangGraph-based multi-agent workflow for automated lead qualification with HubSpot and VAPI integration.  
+This folder contains the LangGraph-based multi-agent workflow for automated lead qualification with HubSpot and VAPI integration.  
 It is the extended version of the original n8n workflow, now with Python FastAPI + LangGraph orchestration.
 
 ---
@@ -137,7 +137,8 @@ Before setting up this workflow, ensure you have:
   - Add you NGROK URL/ Secret keys accordingly
 
     #HubSpot → New Contact:
-      curl -X POST "https://<ngrok-url>/webhook/hubspot" \
+
+    curl -X POST "https://<ngrok-url>/webhook/hubspot" \
         -H "Content-Type: application/json" \
         -d '[{
           "eventId": 11111,
@@ -154,7 +155,8 @@ Before setting up this workflow, ensure you have:
         }]'
     
     #VAPI → End of Call:
-      curl -X POST "https://<ngrok-url>/webhook/vapi" \
+
+    curl -X POST "https://<ngrok-url>/webhook/vapi" \
         -H "Content-Type: application/json" \
         -d '{
           "message": {
