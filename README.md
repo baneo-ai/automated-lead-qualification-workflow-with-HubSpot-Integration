@@ -1,177 +1,168 @@
-# automated-lead-qualification-workflow-with-HubSpot-Integration
-This repository contains the complete product documentation and workflow files for an end-to-end loan lead qualification system built with n8n. It integrates VAPI, HubSpot, and Twilio to automate lead qualification, call handling, and reporting. It also leverages no-code platforms bolt.diy to build an Operations Realtime Dashboard. 
+# Automated Lead Qualification Workflow with HubSpot Integration
 
-## Contents
-- Integration Documentation – PDF describing architecture, configuration, flow, and setup.
-- Workflow Files – JSON dumps for three n8n workflows:
-  - Lead qualification with HubSpot integration
-  - Call event reporting and summarization
-  - Voice agent with prompt workflow (VAPI)
+This repository documents **two approaches** for building an automated lead‑qualification system that integrates **HubSpot** and **VAPI**:
 
-## Notes
-- The automation workflow is implemented in n8n.
-- Voice agent is created using VAPI workflows.
-- Phone numbers are sourced from Twilio.
-- All sensitive keys and identifiers have been readacted.
+1) **n8n Version (No‑Code)** – Workflow‑driven automation using n8n + VAPI + HubSpot (+ Twilio for numbers).  
+2) **LangGraph Version (Python + FastAPI)** – Code‑based, multi‑agent orchestration with LangGraph, FastAPI, and optional LLM analysis.
 
-==========================================================
-
-THere's a Python+FastAPI+LangGraph version also available.
-
-## Automated Lead Qualification Workflow (LangGraph Version)
-
-This folder contains the LangGraph-based multi-agent workflow for automated lead qualification with HubSpot and VAPI integration.  
-It is the extended version of the original n8n workflow, now with Python FastAPI + LangGraph orchestration.
+Both versions implement the same business outcome; choose **n8n** for visual/no‑code customization or **LangGraph** for code‑first control and extensibility.
 
 ---
 
 ## Use Case
 
 The system automates how new leads are handled once they enter HubSpot.
-	1.	Lead created in HubSpot
-	    •	Whenever a new contact is added in HubSpot (status = NEW), a workflow is triggered.
-	2.	Automated outbound call via VAPI
-	    •	The system places a call to the lead using VAPI.
-	    •	The conversation is handled by a virtual agent that can ask qualification questions (budget, authority, need, timeline, etc.).
-	3.	Call outcome analysis
-	    •	At the end of the call, VAPI sends a call report (summary + transcript + structured data).
-	    •	The system classifies the lead as Qualified, Unqualified, or Other based on the conversation.
-	4.	Human vs. VM distinction
-	    •	If the call connects with a human, the transcript and analysis reflect that (answers captured, reasoning logged).
-	    •	If it only hits a voicemail or there’s no response, the workflow notes that and updates HubSpot accordingly (e.g., “Attempted to Contact” or “No connect”).
-	5.	Update HubSpot automatically
-	    •	The system updates the lead status (e.g., Qualified → Open Deal, Unqualified, Attempted Contact).
-	    •	It also logs a call engagement inside the contact’s HubSpot record, including a professional call summary generated from the transcript.
+
+1. **Lead created in HubSpot**  
+   • Whenever a new contact is added in HubSpot (**status = NEW**), a workflow is triggered.
+
+2. **Automated outbound call via VAPI**  
+   • The system places a call to the lead using VAPI.  
+   • A virtual agent runs the conversation and asks qualification questions (budget, authority, need, timeline, etc.).
+
+3. **Call outcome analysis**  
+   • At the end of the call, VAPI sends a call report (summary + transcript + structured data).  
+   • The system classifies the lead as **Qualified**, **Unqualified**, or **Other**.
+
+4. **Human vs. Voicemail distinction**  
+   • If a human answers, the transcript and analysis reflect captured answers.  
+   • If voicemail/no‑answer, the workflow updates HubSpot accordingly (e.g., **Attempted to Contact**, **No Connect**).
+
+5. **Update HubSpot automatically**  
+   • Updates the lead status (e.g., **Qualified → Open Deal**, **Unqualified**, **Attempted Contact/Connected**).  
+   • Logs a **call engagement** inside the contact record and writes a professional **call summary** to a contact property.
 
 ---
 
-## Overview
+## Pre‑requisites
 
-This version replaces the no-code n8n workflow with a **LangGraph-powered agent system** that handles:
+1. **HubSpot**  
+   - A Private App with CRM scopes (contacts read/write; companies read as needed).  
+   - **Client ID**, **Client Secret**, and **Refresh Token** (OAuth).  
+   - A text contact property (e.g., `contact_summary`) to store summaries.
 
-1. HubSpot webhook listener  
-   - Captures new contacts (`contact.creation` events).  
-   - Fetches contact details (phone, status, etc).  
+2. **VAPI**  
+   - Access to [vapi.ai](https://vapi.ai), an active workflow, and your **VAPI_API_KEY** + **VAPI_WORKFLOW_ID**.
 
-2. LangGraph workflow  
-   - Multi-node pipeline: process contact → initiate VAPI call → analyze → update HubSpot.  
-   - Supports call result analysis with OpenAI (optional) or fallback heuristics.  
+3. **Tunnel (ngrok or similar)**  
+   - Public URL to receive HubSpot + VAPI webhooks during local dev.
 
-3. VAPI webhook listener  
-   - Receives `end-of-call-report`.  
-   - Extracts transcript + analysis.  
-   - Logs call engagement in HubSpot + updates lead status and contact summary.  
+4. **Python 3.11+** (LangGraph version)  
+   - `pip` available to install dependencies.
 
----
-
-## Pre-requisites
-
-Before setting up this workflow, ensure you have:
-
-1. **HubSpot Developer App**  
-   - A HubSpot developer account with a private app created.  
-   - The app must have `crm.objects.contacts.read/write` and `crm.objects.companies.read` scopes enabled.  
-   - Client ID, Client Secret, and Refresh Token from HubSpot.  
-
-2. **VAPI Account**  
-   - Access to [Vapi.ai](https://vapi.ai) with an active workflow created.  
-   - Your `VAPI_API_KEY` and `VAPI_WORKFLOW_ID`.  
-
-3. **Ngrok (or any tunneling service)**  
-   - To expose your local FastAPI server to the internet for HubSpot and VAPI webhooks.  
-
-4. **Python 3.11+**  
-   - Installed locally with `pip` available to install dependencies.  
-
-5. **OpenAI API Key (or any other llm)**  
-   - Required for LLM-powered call transcript analysis and VM analysis.  
+5. **OpenAI API Key (optional)**  
+   - Enables LLM‑powered analysis of transcripts. Without it, a heuristic fallback is used.
 
 ---
 
-## Files
+## Repository Contents
 
-- `hubspot_vapi_agent.py` → Contains all business logic (LangGraph nodes, HubSpot API helpers, VAPI helpers).  
-- `webhook_server.py` → FastAPI server with `/webhook/hubspot` and `/webhook/vapi` endpoints.  
-- `.env.example` → Example environment variables needed for the integration.  
+### n8n Version
+- **Workflow Files (JSON)**  
+  - Lead qualification with HubSpot integration  
+  - Call event reporting & summarization  
+  - Voice agent with prompt workflow (VAPI)
+- **Integration Documentation (PDF)** – Architecture, configuration, flow, and setup.
+- **Notes**  
+  - Implemented entirely in n8n.  
+  - Voice agent configured via VAPI.  
+  - Phone numbers typically from Twilio.  
+  - All sensitive keys/IDs are **redacted**.
 
-	# NOTES: Debug logging below is intentionally verbose for local troubleshooting.
-	# It may include PII from transcripts or CRM events. REMOVE or SANITIZE before deploying to any shared/production environment.
+### LangGraph Version (Code)
+- `langgraph-version/`
+  - `hubspot_vapi_agent.py` – LangGraph nodes, HubSpot helpers, VAPI helpers, LLM analysis (optional).
+  - `webhook_server.py` – FastAPI server exposing `/webhook/hubspot` and `/webhook/vapi`.
+  - `.env.example` – Example environment variables template.
+  - `requirements.txt` – Python dependencies.
+- **Note on Logging**  
+  - Debug logs are **intentionally verbose** for local troubleshooting and may include PII (transcripts, CRM data).  
+  - **Remove/Sanitize** before deploying to any shared/production environment.
 
 ---
 
-## Setup Instructions
+## Setup Instructions (LangGraph Version)
 
-1. Clone the repository
+1. **Clone the repo**
    git clone https://github.com/baneo-ai/automated-lead-qualification-workflow-with-HubSpot-Integration.git
    cd automated-lead-qualification-workflow-with-HubSpot-Integration/langgraph-version
 
-2. Create & activate a virtual environment
+3. Create & activate a virtual environment
    python3 -m venv venv
    source venv/bin/activate
 
-3. Install dependencies
+4. Install dependencies
    pip install -r requirements.txt
 
-4. Copy .env.example → .env and fill in:
-	  •	HUBSPOT_CLIENT_ID
-	  •	HUBSPOT_CLIENT_SECRET
-	  •	HUBSPOT_REFRESH_TOKEN
-	  •	OPENAI_API_KEY (optional, for LLM call analysis)
-	  •	VAPI_API_KEY
-	  •	VAPI_WORKFLOW_ID
-	  •	BASE_URL (your public ngrok URL)
+5. Configure environment
+   Copy .env.example → .env and fill in:
+	•	HUBSPOT_CLIENT_ID, HUBSPOT_CLIENT_SECRET, HUBSPOT_REFRESH_TOKEN
+	•	HUBSPOT_ACCESS_TOKEN (initial; auto‑refresh is handled)
+	•	CALL_SUMMARY_PROPERTY (e.g., contact_summary)
+	•	HS_STATUS_OPEN_DEAL, HS_STATUS_UNQUALIFIED, HS_STATUS_CONTACTED (match your portal)
+	•	VAPI_API_KEY, VAPI_WORKFLOW_ID, VAPI_WEBHOOK_SECRET (optional)
+	•	BASE_URL (your public ngrok URL, no trailing slash)
 
-5. Start the FastAPI server
+6. Start the FastAPI server
    uvicorn webhook_server:app --reload --port 8000
 
-6. Expose via ngrok
+7. Expose locally via ngrok
    ngrok http 8000
+   Set BASE_URL=https://<your-ngrok-host>.ngrok-free.app in .env
 
-7. Register webhooks
+8. Register webhooks
    HubSpot → point contact.creation webhook to: https://<your-ngrok-url>/webhook/hubspot
-   VAPI → set webhook to: https://<your-ngrok-url>/webhook/vapi
+   VAPI → set webhook to: https://<your-ngrok-url>/webhook/vapi (If you set VAPI_WEBHOOK_SECRET, also configure the same secret header in VAPI)
 
-===============================================================================================
+## Example Workflows (Curl)
+   Notes
+	•	Example IDs (eventId, portalId, etc.) below are placeholders.
+	•	Replace <CONTACT_ID> with a valid HubSpot contact ID for your portal.
+	•	Replace <ngrok-url> with your running tunnel URL.
+	•	If you enabled a VAPI secret, add -H "x-vapi-secret: <your-secret>" to the VAPI curl.
 
-##Example Workflows: Run these on the terminal to minimize API cost.
+ HubSpot → New Contact (simulate webhook event)
+ curl -X POST "https://<ngrok-url>/webhook/hubspot" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "eventId": 11111,
+      "subscriptionId": 22222,
+      "portalId": 3333333,
+      "appId": 44444,
+      "occurredAt": 1234567890000,
+      "subscriptionType": "contact.creation",
+      "attemptNumber": 0,
+      "objectId": "<CONTACT_ID>",
+      "changeFlag": "NEW",
+      "changeSource": "INTEGRATION",
+      "sourceId": "55555"
+    }
+  ]'
 
-   # Notes
-  - Example IDs (`eventId`, `portalId`, etc.) in the sample workflows are placeholders. Replace `<CONTACT_ID>` with a valid HubSpot contact ID when testing.  
-  - Add you NGROK URL/ Secret keys accordingly
+  VAPI → End of Call (simulate end-of-call-report)
+  curl -X POST "https://<ngrok-url>/webhook/vapi" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": {
+      "type": "end-of-call-report",
+      "timestamp": 999,
+      "endedReason": "completed",
+      "call": { "id": "sim-001", "metadata": { "lead_id": "<CONTACT_ID>", "name": "Test Lead" } },
+      "artifact": { "transcript": "Prospect confirmed budget, authority, wants this week." },
+      "analysis": {
+        "summary": "Qualified: strong budget, decision maker, timeline within 7 days.",
+        "structuredData": { "budget": "high", "need": "clear", "authority": true, "timing_days": 7 }
+      }
+    }
+  }'
 
-    #HubSpot → New Contact:
+  ## Security and Privacy
+	•	Do not commit real keys or tokens. Use .env locally and a secret manager in production.
+	•	Debug logs may include PII (e.g., transcripts, phone, email). Remove or sanitize logs before deploying to shared environments.
+	•	If using VAPI_WEBHOOK_SECRET, verify it in the server and configure the same value in VAPI.
 
-    curl -X POST "https://<ngrok-url>/webhook/hubspot" \
-        -H "Content-Type: application/json" \
-        -d '[{
-          "eventId": 11111,
-          "subscriptionId": 22222,
-          "portalId": 3333333,
-          "appId": 44444,
-          "occurredAt": 1234567890000,
-          "subscriptionType": "contact.creation",
-          "attemptNumber": 0,
-          "objectId": "<CONTACT_ID>",
-          "changeFlag": "NEW",
-          "changeSource": "INTEGRATION",
-          "sourceId": "55555"
-        }]'
-    
-    #VAPI → End of Call:
-
-    curl -X POST "https://<ngrok-url>/webhook/vapi" \
-        -H "Content-Type: application/json" \
-        -d '{
-          "message": {
-            "type": "end-of-call-report",
-            "timestamp": 999,
-            "endedReason": "completed",
-            "call": { "id": "sim-001", "metadata": { "lead_id": "<CONTACT_ID>", "name": "Test Lead" } },
-            "artifact": { "transcript": "Prospect confirmed budget, authority, wants this week." },
-            "analysis": {
-              "summary": "Qualified: strong budget, decision maker, timeline within 7 days.",
-              "structuredData": { "budget":"high", "need":"clear", "authority":true, "timing_days":7 }
-            }
-          }
-        }'
-
+ ## Choosing an approach
+	•	n8n – fastest to customize visually; ideal for teams that prefer no‑code and workflow editors.
+	•	LangGraph – more control and extensibility for developers; supports multi‑agent orchestration and LLM‑based analysis.
+   
