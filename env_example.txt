@@ -1,0 +1,42 @@
+# ===============================
+# General
+# ===============================
+OPENAI_API_KEY=your_openai_api_key_here   
+PERSONA_API_KEY=your_persona_key_here     
+
+
+# ===============================
+# HubSpot (OAuth)
+# ===============================
+# From your HubSpot Private App (must have CRM contact read/write scopes)
+HUBSPOT_CLIENT_ID=your_hubspot_client_id_here
+HUBSPOT_CLIENT_SECRET=your_hubspot_client_secret_here
+HUBSPOT_REFRESH_TOKEN=your_hubspot_refresh_token_here
+
+# Initial access token (will be auto-refreshed by the workflow)
+HUBSPOT_ACCESS_TOKEN=your_initial_access_token_here
+
+# HubSpot contact property for call summaries (must exist in your portal)
+CALL_SUMMARY_PROPERTY=contact_summary
+
+# HubSpot lead status values (keep defaults unless you customized them)
+HS_STATUS_OPEN_DEAL=OPEN_DEAL
+HS_STATUS_UNQUALIFIED=UNQUALIFIED
+HS_STATUS_CONTACTED=CONNECTED
+
+
+# ===============================
+# VAPI
+# ===============================
+VAPI_API_KEY=your_vapi_api_key_here
+VAPI_WORKFLOW_ID=your_vapi_workflow_id_here
+
+# Optional: webhook secret for validating inbound VAPI → server calls
+VAPI_WEBHOOK_SECRET=your_vapi_secret_key_here
+
+
+# ===============================
+# Server
+# ===============================
+# Your ngrok (or tunnel) public URL, no trailing slash
+BASE_URL=https://<ngrok-id>.ngrok-free.app
