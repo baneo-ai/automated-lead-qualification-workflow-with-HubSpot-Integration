@@ -94,6 +94,9 @@ Before setting up this workflow, ensure you have:
 - `webhook_server.py` → FastAPI server with `/webhook/hubspot` and `/webhook/vapi` endpoints.  
 - `.env.example` → Example environment variables needed for the integration.  
 
+	# NOTES: Debug logging below is intentionally verbose for local troubleshooting.
+	# It may include PII from transcripts or CRM events. REMOVE or SANITIZE before deploying to any shared/production environment.
+
 ---
 
 ## Setup Instructions
@@ -171,3 +174,4 @@ Before setting up this workflow, ensure you have:
             }
           }
         }'
+
