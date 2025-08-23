@@ -1,0 +1,9 @@
+fastapi==0.110.0
+uvicorn==0.29.0
+python-dotenv==1.0.1
+requests==2.31.0
+
+# LangChain ecosystem
+langgraph==0.0.48
+langchain-core==0.1.52
+langchain-openai==0.1.10
